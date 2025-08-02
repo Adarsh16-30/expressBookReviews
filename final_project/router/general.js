@@ -69,50 +69,68 @@ public_users.get('/review/:isbn',function (req, res) {
     }
 });
 
-public_users.get('/promise/books', function(req, res) {
-    new Promise((resolve, reject) => {
-        resolve(books);
-    })
-    .then(data => res.json(data))
-    .catch(err => res.status(500).json({message: "Error"}));
+public_users.get('/async/books', async function(req, res) {
+    try {
+        const getBooks = () => {
+            return new Promise((resolve) => resolve(books));
+        };
+        const data = await getBooks();
+        res.status(200).json(data);
+    } catch (err) {
+        res.status(500).json({ message: "Error" });
+    }
 });
 
-public_users.get('/promise/isbn/:isbn', function(req, res) {
-    const isbn = req.params.isbn;
-    new Promise((resolve, reject) => {
-        if (books[isbn]) resolve(books[isbn]);
-        else reject();
-    })
-    .then(data => res.json(data))
-    .catch(() => res.status(404).json({ message: "Book not found" }));
+public_users.get('/async/isbn/:isbn', async function(req, res) {
+    try {
+        const isbn = req.params.isbn;
+        const getBook = (isbn) => new Promise((resolve, reject) => {
+            if(books[isbn]) resolve(books[isbn]);
+            else reject();
+        });
+        const data = await getBook(isbn);
+        res.status(200).json(data);
+    } catch (e) {
+        res.status(404).json({ message: "Book not found" });
+    }
 });
 
-public_users.get('/promise/author/:author', function(req, res) {
+public_users.get('/async/author/:author', async function(req, res) {
     const author = req.params.author;
-    new Promise((resolve) => {
-        let booksByAuthor = [];
+    const getBooksByAuthor = (author) => new Promise((resolve) => {
+        let result = [];
         for(let key in books) {
-            if(books[key].author === author){
-                booksByAuthor.push(books[key]);
+            if(books[key].author.toLowerCase() === author.toLowerCase()) {
+                result.push(books[key]);
             }
         }
-        resolve(booksByAuthor);
-    })
-    .then(data => res.json(data));
+        resolve(result);
+    });
+    try {
+        const data = await getBooksByAuthor(author);
+        res.status(200).json(data);
+    } catch (e) {
+        res.status(404).json({ message: "Not found" });
+    }
 });
 
-public_users.get('/promise/title/:title', function(req, res) {
+public_users.get('/async/title/:title', async function(req, res) {
     const title = req.params.title;
-    new Promise((resolve) => {
-        let booksByTitle = [];
+    const getBooksByTitle = (title) => new Promise((resolve) => {
+        let result = [];
         for(let key in books) {
-            if(books[key].title === title){
-                booksByTitle.push(books[key]);
+            if(books[key].title.toLowerCase() === title.toLowerCase()) {
+                result.push(books[key]);
             }
         }
-        resolve(booksByTitle);
-    })
-    .then(data => res.json(data));
+        resolve(result);
+    });
+    try {
+        const data = await getBooksByTitle(title);
+        res.status(200).json(data);
+    } catch (e) {
+        res.status(404).json({ message: "Not found" });
+    }
 });
 
 module.exports.general = public_users;
